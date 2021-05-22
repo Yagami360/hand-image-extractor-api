@@ -1,0 +1,67 @@
+version: '2.3'
+
+services:
+    graphonomy_gpu_server:
+        container_name: graphonomy_server_gpu_container
+        image: graphonomy_wrapper_image
+        runtime: nvidia
+        build:
+            context: "api/graphonomy_wrapper/docker"
+            dockerfile: Dockerfile
+        volumes:
+            - ${PWD}/api/graphonomy_wrapper:/graphonomy_wrapper
+            - /etc/group:/etc/group:ro
+            - /etc/passwd:/etc/passwd:ro
+        ports:
+            - "5003:5003"
+        tty: true
+        environment:
+            TZ: "Asia/Tokyo"
+            LC_ALL: C.UTF-8
+            LANG: C.UTF-8
+        command: bash -c "export CUDA_VISIBLE_DEVICES=0 && python3 app.py --host 0.0.0.0 --port 5003 --device gpu --use_amp --debug"
+
+    densepose_server:
+        container_name: densepose_container
+        image: densepose_image
+        runtime: nvidia
+        volumes:
+            - ${PWD}/api/densepose_wrapper/DensePose/DensePoseData:/denseposedata
+            - ${PWD}/api/densepose_wrapper/DensePose/DensePoseData:/densepose/DensePoseData
+            - ${PWD}/api/densepose_wrapper/DensePose/configs:/densepose/configs
+            - ${PWD}/api/densepose_wrapper/DensePose/tools:/densepose/tools
+            - ${PWD}/api/densepose_wrapper/infer_data:/densepose/DensePoseData/infer_data
+            - ${PWD}/api/densepose_wrapper/results:/densepose/results
+            - ${PWD}/api/densepose_wrapper/api:/densepose/api
+        build:
+            context: api/densepose_wrapper/docker
+            dockerfile: Dockerfile
+        ports:
+            - "5005:5005"
+        tty: true
+        environment:
+            TZ: "Asia/Tokyo"
+            LC_ALL: C.UTF-8
+            LANG: C.UTF-8
+        command: bash -c "export CUDA_VISIBLE_DEVICES=0 && cd api && python2 app.py --port 5005 --debug"
+
+    hand_image_extractor_api_server:
+        container_name: hand-image-extractor-api-container
+        image: hand-image-extractor-api-image
+        runtime: nvidia
+        build:
+            context: "api/"
+            dockerfile: Dockerfile
+        volumes:
+            - ${PWD}/api:/api
+        ports:
+            - "5000:5000"
+        depends_on:
+            - graphonomy_gpu_server
+            - densepose_server
+        tty: true
+        environment:
+            TZ: "Asia/Tokyo"
+            LC_ALL: C.UTF-8
+            LANG: C.UTF-8
+        command: bash -c "python3 app.py --host 0.0.0.0 --port 5000 --debug"

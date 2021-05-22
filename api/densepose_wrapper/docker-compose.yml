@@ -1,0 +1,26 @@
+version: '2.3'
+
+services:
+    app:
+        container_name: densepose_container
+        image: densepose_image
+        runtime: nvidia
+        volumes:
+            - ${PWD}/DensePose/DensePoseData:/denseposedata
+            - ${PWD}/DensePose/DensePoseData:/densepose/DensePoseData
+            - ${PWD}/DensePose/configs:/densepose/configs
+            - ${PWD}/DensePose/tools:/densepose/tools
+            - ${PWD}/infer_data:/densepose/DensePoseData/infer_data
+            - ${PWD}/results:/densepose/results
+            - ${PWD}/api:/densepose/api
+        build:
+            context: .
+            dockerfile: docker/Dockerfile
+        ports:
+            - "5003:5003"
+        tty: true
+        environment:
+            TZ: "Asia/Tokyo"
+            LC_ALL: C.UTF-8
+            LANG: C.UTF-8
+        command: bash -c "cd api && python2 app.py --port 5003 --debug"
