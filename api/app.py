@@ -12,6 +12,7 @@ import torch
 # flask
 import flask
 from flask_cors import CORS
+import requests
 
 # 自作モジュール
 from utils import conv_base64_to_pillow, conv_pillow_to_base64
@@ -136,14 +137,19 @@ def responce():
     pose_densepose_np = cv2.cvtColor(np.asarray(pose_densepose_pillow), cv2.COLOR_RGB2BGR)
     pose_densepose_parse_np = pose_densepose_np[:,:,0]
 
-    arm_mask_np = (pose_parse_np==GRAPHONOMY_NAME_TO_IDX["LeftArm"]).astype(np.int) + (pose_parse_np==GRAPHONOMY_NAME_TO_IDX["RightArm"]).astype(np.int)
-    hand_mask_np = (pose_densepose_parse_np==3).astype(np.int) + (pose_densepose_parse_np==4).astype(np.int)
+    arm_mask_np = (pose_parse_np==GRAPHONOMY_NAME_TO_IDX["LeftArm"]).astype(np.uint8) + (pose_parse_np==GRAPHONOMY_NAME_TO_IDX["RightArm"]).astype(np.uint8)
+    hand_mask_np = (pose_densepose_parse_np==3).astype(np.uint8) + (pose_densepose_parse_np==4).astype(np.uint8)
+    hand_mask_np = np.tile(np.expand_dims(hand_mask_np,2),3)
 
     hand_mask_np = arm_mask_np * hand_mask_np
     hand_img_np = hand_mask_np * pose_img_np
 
-    hand_img_mask_pillow = Image.fromarray(hand_mask_np)
-    hand_img_pillow = Image.fromarray(hand_img_np)
+    hand_img_mask_pillow = Image.fromarray(hand_mask_np.astype(np.uint8)*255)
+    hand_img_pillow = Image.fromarray(cv2.cvtColor(hand_img_np.astype(np.uint8), cv2.COLOR_BGR2RGB))
+
+    if( args.debug ):
+        pose_densepose_parse_pillow = Image.fromarray(pose_densepose_parse_np.astype(np.uint8))
+        pose_densepose_parse_pillow.save( os.path.join( "debug", "pose_densepose_parse.png" ) )
 
     #------------------------------------------
     # 送信する画像データの変換

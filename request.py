@@ -6,6 +6,7 @@ import json
 from PIL import Image
 from tqdm import tqdm 
 import requests
+import time
 
 # 自作モジュール
 from api.utils import conv_base64_to_pillow, conv_pillow_to_base64
@@ -42,9 +43,6 @@ if __name__ == "__main__":
         #----------------------------------
         pose_img_pillow = Image.open( os.path.join(args.in_image_dir, img_name) )
         pose_img_base64 = conv_pillow_to_base64(pose_img_pillow)
-        if( args.debug ):
-            print( "os.path.join(args.in_image_dir, img_name) : ", os.path.join(args.in_image_dir, img_name) )
-            print( "pose_img_pillow.size : ", pose_img_pillow.size )
 
         #----------------------------------
         # リクエスト処理
@@ -57,6 +55,7 @@ if __name__ == "__main__":
         except Exception as e:
             print( "通信失敗 [hand-image-extractor-api]" )
             print( "Exception : ", e )
+            time.sleep(1)
             continue
 
         #----------------------------------

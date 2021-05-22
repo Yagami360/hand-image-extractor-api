@@ -18,6 +18,7 @@ docker-compose -f docker-compose.yml stop
 docker-compose -f docker-compose.yml up -d
 
 # 手画像を取得
+sleep 10
 python request.py \
     --in_image_dir ${IN_IMAGE_DIR} \
     --results_dir ${RESULTS_DIR} \
